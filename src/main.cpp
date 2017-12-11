@@ -1,8 +1,12 @@
 #include "Interface.h"
+#include "FileSystem.h"
 
 int main()
 {
-    run();
+    FileSystem fs ;
+    
+    fs.run() ;
+    
     return 0;
 }
 

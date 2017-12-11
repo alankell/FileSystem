@@ -1,8 +1,17 @@
 #include"Interface.h"
 #include<iostream>
 #include<string>
+#include<fstream>
 #include"FileSystem.h"
 #include<unistd.h>
+
+#define RED     "\x1b[31m"
+#define GREEN   "\x1b[32m"
+#define YELLOW  "\x1b[33m"
+#define BLUE    "\x1b[34m"
+#define MAGENTA "\x1b[35m"
+#define CYAN    "\x1b[36m"
+#define RESET   "\x1b[0m"
 
 using namespace std;
 
@@ -31,93 +40,89 @@ void help() {
 }
 
 
-/*User register and write the file function*/
-int regist( char username[30], char password[30])
+int FileSystem::regist( string username, string password )
 {
-    FILE *cfptr;//pointer to the file
-    if ((cfptr = fopen("users.ini", "a+")) == NULL)
+    //Check whether the repetition of registration with the same user name.
+    for( auto &user:this->getUserVector() )
     {
-        printf("File client.txt could not be opened\n");
-        fclose(cfptr);
-        return 0;
-    } else {
-        fprintf(cfptr, "%s %s\n", username, password);
-        fclose(cfptr);
-        return 1;
-
-    }
-}
-/*Check whether the user name/passed has been registered*/
-int login(char username[30], char password[30]) {
-    char user[30];
-    char pass[30];
-    FILE *cfptr;//pointer to file
-    if ((cfptr = fopen("users.ini", "r")) == NULL) {
-        printf("File client.txt could not be opened\n");
-        fclose(cfptr);
-        return 0;
-    } else {
-        while (!feof(cfptr)) {
-            fscanf(cfptr, "%s%s", user, pass);
-            if ((strcmp(username, user) == 0) && (strcmp(password, pass) == 0)) {
-                fclose(cfptr);
-                return 1;
-            }
+        if( user.name == username )//Repeated registration!!
+        {
+            printf( "\t\t--Warning: " RED"Repeated username\n" RESET );
+            return 0 ;
         }
     }
-    fclose(cfptr);
-    return 0;
+    //No repetition
+    FILE *adduser = fopen("./user.txt","a") ;
+    fprintf( adduser,"%s\t%s\n", username.c_str(), password.c_str());
+    
+    this->getUserVector().push_back( UserInfo( username, password ) ) ;
+    
+    
+    
+    
+    return 1 ;
+}
+/*Check whether the user name/passed has been registered*/
+int FileSystem::login( string username, string password )
+{
+    
+    for( auto &UserInfo:this->getUserVector())
+    {
+        if( UserInfo.name == username && UserInfo.passwd == password ) return 1 ;
+    }
+    return 0 ;
 }
 
-int fsOperate( char name[30], char pass[30] )
+int FileSystem::fsOperate( string user, string passwd )
 {
-    FileSystem fs;
-    fs.setUser(name, pass);
-    while (1) {
+    this->setUser( user , passwd );
+    while( 1 )
+    {
         system("clear");
         help();
-        while (1) {
-            cout << endl;
+        while( 1 )
+        {
+            this->showPath();
+            
             string choice;
+            cin >> choice ;
 
-            fs.showPath();
-            cin >> choice;
             if (choice == "mkdir")
-                fs.newDir();
+                this->newDir();
             else if (choice == "mk")
-                fs.newFile();
+                this->newFile();
             else if (choice == "rmdir")
-                fs.deleteDir();
+                this->deleteDir();
             else if (choice == "rm")
-                fs.deleteFile();
+                this->deleteFile();
             else if (choice == "renamedir")
-                fs.renameDir();
+                this->renameDir();
             else if (choice == "rename")
-                fs.renameFile();
+                this->renameFile();
             else if (choice == "cd")
-                fs.readDir();
+                this->readDir();
             else if (choice == "read")
-                fs.readFile();
+                this->readFile();
             else if (choice == "ls")
-                fs.showCurrentDir();
+                this->showCurrentDir();
             else if (choice == "cpdir")
-                fs.copyDir();
+                this->copyDir();
             else if (choice == "cp")
-                fs.copyFile();
+                this->copyFile();
             else if (choice == "pastedir")
-                fs.pasteDir();
-            else if (choice == "paste") {
-                fs.pasteFile();
-            } else if (choice == "vi")
-                fs.edit();
+                this->pasteDir();
+            else if (choice == "paste")
+                this->pasteFile();
+            else if (choice == "vi")
+                this->edit();
             else if (choice == "cd..")
-                fs.goback();
+                this->goback();
             else if (choice == "clear") {
                 system("clear");
                 help();
             } else if (choice == "exit") {
                 system("clear");
-                cout << "用户: " << name << "正在注销...."
+                cout << "Leave " << name << "...."
                     << endl;
                  sleep(3);
                 return 0;
@@ -163,12 +168,33 @@ int fsOperate( char name[30], char pass[30] )
     }
 
 }
-void run()
+
+void FileSystem::readUserInfo()
+{
+    ifstream token ;
+    token.open( "user.txt", ifstream::in ) ;
+    if( !token )
+    {
+        printf("Error!\n");
+    }
+    string user ="", password="" ;
+    token >> user >> password ;
+    while( token >> user >> password )
+    {
+        this->getUserVector().push_back( UserInfo( user, password ) ) ;
+    }
+}
+void FileSystem::run()
 {
     int  choice = 0 ;
-    char name[30], pass[30], pass1[30];
+    string name, pass, pass1 ;
     system("clear");//clean the screen
-    sleep(2);
+    sleep( 1 );
+    
+    this->readUserInfo() ;
+    
+    
+    
     while( true )
     {
         system("clear");
@@ -191,22 +217,22 @@ void run()
                         cin >> pass;
                         cout << "Retype the password: ";
                         cin >> pass1;
-                        while( strcmp(pass, pass1) != 0 )
+                        while( strcmp( pass.c_str(), pass1.c_str() ) != 0 )
                         {
-                            cout << "          --Passwords are inconsistent, please retry..." << endl;
+                            cout << "\t\t--Passwords are inconsistent, please retry..." << endl;
                             cout << "Please type the password: ";
                             cin >> pass;
                             cout << "Retype the password: ";
                             cin >> pass1;
                         }
-                        if( regist(name, pass) == 1 )
+                        if( regist( name, pass ) == 1 )
                         {
-                             cout << "        --Successful registration.." << endl;
+                             cout << "\t\t--Successful registration.." << endl;
                              sleep(2);
                         } 
                         else
                         {
-                            cout << "         --Failing registration, please retry" << endl;
+                            cout << "\t\t--Failing registration, please retry" << endl;
                             sleep(2);
                         }
                     }
@@ -218,19 +244,19 @@ void run()
                         cin >> name;
                         cout << "Password:";
                         cin >> pass;
-                        if( login(name, pass) == 1 )
+                        if( this->login(name, pass) == 1 )
                         {
                             cout << "       --Successful Login !" << endl;
-                            fsOperate(name, pass);
-
-                        } else{
+                            this->fsOperate(name, pass) ;
+                        }
+                        else
+                        {
                             cout << "          --Fail!, Please recheck username and password" << endl;
-                             sleep(2);
-
+                            sleep(2);
                         }}
                         break;
             case 3:{
-            	      system("clear");
+            	        system("clear");
                         cout << "\t\t**********************************************************"  << endl;
                         cout << "\t\t*                        Help                           \t*" << endl;
                         cout << "\t\t*          How do you use the file system ?             \t*" << endl ;
@@ -245,13 +271,13 @@ void run()
             case 4: {
                         system("clear");
                         cout << "        --Leave the file system.." << endl;
-                         sleep(3);
+                        sleep(1);
                         exit(0);
                     }
                     break;
-                    /*其他选项*/
             default:
-                    
+                    printf( RED"[Error] " RESET"The file system can not recognize your choice !\n" );
+                    sleep(5);
                     break;
         }
     }

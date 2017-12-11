@@ -22,10 +22,10 @@ all: $(EXE)
 	@printf "\033[32m[Info]:\033[0m Complete! Execution file:"
 	@printf "\033[92;1m %s\033[0m\n" "$(EXE)"
 $(EXE): $(OBJ)
-	$(CXX) $(CXXFLAGS) -o $(EXE) $^
+	@$(CXX) $(CXXFLAGS) -o $(EXE) $^
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp $(INC)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+	@$(CXX) $(CXXFLAGS) -c $< -o $@
 
 #----------------- CLEAN --------------------------------------	
 

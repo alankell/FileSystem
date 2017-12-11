@@ -7,6 +7,16 @@
 #include<unistd.h>
 #include<iomanip>
 #include"FileSystem.h"
+
+
+#define RED     "\x1b[31m"
+#define GREEN   "\x1b[32m"
+#define YELLOW  "\x1b[33m"
+#define BLUE    "\x1b[34m"
+#define MAGENTA "\x1b[35m"
+#define CYAN    "\x1b[36m"
+#define RESET   "\x1b[0m"
+
 using namespace std;
 int disk_empty = 10000 ; //Global variable, the size of virtual disk
 
@@ -19,6 +29,7 @@ FileSystem::FileSystem()
     copytempfile = NULL;
     copytempdir = NULL;
 }
+
 FileSystem::~FileSystem() {
     disk_empty += size;		//Release the mem that user occupy
     size = 0;
@@ -58,7 +69,8 @@ int FileSystem::newFile() {
     MyFile *p = NULL;
     p = new MyFile;
 
-    if (p == 0) {
+    if( p == 0 )
+    {
         cout << "CREATE           -FALSE";
         return 0;
     }
@@ -127,9 +139,9 @@ int FileSystem::newDir() {
 
     /*Check naming rule*/
     string tempname(p->name) ;
-    for(int i = 0 ;i< 8 ;++i)
+    for( int i = 0 ;i< 8 ;++i )
     {
-        if(tempname.find(error[i],0)!=string::npos)
+        if( tempname.find(error[i],0)!=string::npos )
         {
             cout << "RENAME              -FALSE"<<endl;
             return 0 ;
@@ -602,16 +614,17 @@ int FileSystem::edit() {
 
 int FileSystem::show_path(MyDir *d)//show the current path
 {
-    if (d->preDir == NULL)
-        cout << root->name;
-    if (d->preDir != NULL) {
+    if( d->preDir == NULL )
+        cout <<  CYAN << root->name;
+    if( d->preDir != NULL ){
         this->show_path(d->preDir);//recursion
-        cout << d->name;
+        cout <<  CYAN << d->name;
     }
-    cout << "/";
+    cout << "/" << RESET ;
     return 1;
 }
-int FileSystem::showCurrentDir() {
+int FileSystem::showCurrentDir()
+{
     MyDir *d = currentDir->dirPtr;
     MyFile *f = currentDir->filePtr;
     if (d == NULL && f == NULL) {
@@ -653,11 +666,12 @@ int FileSystem::goback() {
     return 1;
 }
 
-int FileSystem::setUser(char *n, char *c) {
+int FileSystem::setUser( string user, string passwd )
+{
     MyDir *root = new MyDir;
-    strcpy(root->name, n);
-    strcpy(name, n);
-    strcpy(password, c);
+    strcpy( root->name, user.c_str() );
+    strcpy( this->name, user.c_str() );
+    strcpy( this->password, passwd.c_str());
 
     this->root = root;
     currentDir = root;

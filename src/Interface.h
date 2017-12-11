@@ -1,6 +1,6 @@
 #ifndef _INTERFACE_
 #define _INTERFACE_
 
-void run();
+//void run();
 
 #endif
