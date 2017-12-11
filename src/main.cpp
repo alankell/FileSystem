@@ -1,6 +1,7 @@
 #include "Interface.h"
 
-int main() {
+int main()
+{
     run();
     return 0;
 }

@@ -2,34 +2,39 @@
 #include<string.h>
 #include<string>
 #include<iomanip>
-#include <stdlib.h>
+#include<stdlib.h>
 #include<stdio.h>
-#include<windows.h>
+#include<unistd.h>
 #include<iomanip>
 #include"FileSystem.h"
 using namespace std;
-extern int disk_empty=10000; //全局变量虚拟磁盘空闲空间大小
-string error[] = {"/","\\", ":","<",">","|","*","&"} ;  //命名中的非法字符
-FileSystem::FileSystem() {
+int disk_empty = 10000 ; //Global variable, the size of virtual disk
+
+string error[] = {"/","\\", ":","<",">","|","*","&"} ;  //Illegal character
+
+FileSystem::FileSystem()
+{
     size = 0;
     currentDir = NULL;
     copytempfile = NULL;
     copytempdir = NULL;
 }
 FileSystem::~FileSystem() {
-    disk_empty += size;		//释放用户所占空间
-    size = 0;				// 置0
+    disk_empty += size;		//Release the mem that user occupy
+    size = 0;
 
     MyDir *d = root;
     MyFile *f = currentDir->filePtr;
-    while (f != 0) {
-        if (f->nextFile == 0) {
+    while( f != 0 )
+    {
+        if( f->nextFile == 0 )
+        {
             this->dele_file(f);
             f = 0;
             break;
         }
-        while (f->nextFile->nextFile != 0)
-            f = f->nextFile;
+        while( f->nextFile->nextFile != 0 )
+            f = f->nextFile ;
         this->dele_file(f->nextFile);
         f->nextFile = 0;
         f = currentDir->filePtr;
@@ -58,44 +63,50 @@ int FileSystem::newFile() {
         return 0;
     }
     cin>>p->name ;
-    /*命名检测*/
+    /*Check the naming rule*/
     string tempname(p->name) ;
     for(int i = 0 ;i< 8 ;++i)
     {
-        if(tempname.find(error[i],0)!=string::npos)//从字符串的下标为0处开始查找error[i],如果没找到，返回一个特别的标志c++中用npos表示
+        if(tempname.find(error[i],0)!=string::npos)//Check whether there exists illegal char in the character stream
         {
             cout << "RENAME            -FALSE"<<endl;
             return 0 ;
         }
     }
 
-    /*创建时候情况如下
-     * 1. 目录下没有文件
-     * 2. 目录下有文件，新文件命名冲突
-     * 3. 目录下有文件，新文件无命名冲突
+    /* Following situation may apper, right after the registration:
+     * 1. There exists NO file in the directory.
+     * 2. There exist any file, but it violate the naming rule.
+     * 3. There exist any file, and it obey the naming rule.
      * */
-    /*检测有无同名函数*/
-    if (currentDir->filePtr == NULL) {
+    
+    /* Check whether there exist another function with same name */
+    if( currentDir->filePtr == NULL )
+    {
         p->nextFile = currentDir->filePtr;
         currentDir->filePtr = p;
-    } else {
+    }
+    else
+    {
         MyFile *q = new MyFile;
         q = currentDir->filePtr;
-        while (q != NULL) {
-            if (strcmp(p->name, q->name)==0) {
+        while( q != NULL )
+        {
+            if( strcmp(p->name, q->name)==0 )
+            {
                 cout << "FILE EXISTS             -FALSE" << endl;
                 return 0;
             }
             q = q->nextFile;
         }
 
-        /*重置链表结构*/
+        /*Rebuild the Linked List*/
         p->nextFile = currentDir->filePtr;
         //p->size=0;
         currentDir->filePtr = p;
         MyDir *h = currentDir;
 
-        /*更改上级目录的大小*/
+        /*Resize the size of upper layer direcotory*/
         while (h != NULL) {
             h->size += p->size;
             h = h->preDir;
@@ -114,7 +125,7 @@ int FileSystem::newDir() {
     p = new MyDir;
     cin >> p->name;
 
-    /*命名检测*/
+    /*Check naming rule*/
     string tempname(p->name) ;
     for(int i = 0 ;i< 8 ;++i)
     {
@@ -135,22 +146,25 @@ int FileSystem::newDir() {
     else
         h = currentDir->dirPtr;
 
-    /*创建时候情况如下
-     * 1. 目录下没有子目录
-     * 2. 目录下有子目录，命名冲突
-     * 3. 目录下有子目录，无命名冲突
+    /* Following situation may apper, right after the registration:
+     * 1. There exists NO file in the directory.
+     * 2. There exist any file, but it violate the naming rule.
+     * 3. There exist any file, and it obey the naming rule.
      * */
-    /*检测有无同名目录*/
+    
+    /*Check naming rule*/
 
-    while (h != NULL) {
-        if (strcmp(h->name, p->name)==0) {
+    while( h != NULL )
+    {
+        if( strcmp(h->name, p->name) == 0 )
+        {
             cout << "DIR EXISTS           -FALSE" << endl;
             return 0;
         }
         h = h->nextDir;
     }
 
-    /*重置链表结构*/
+    /*Rebuild the Linked List*/
     p->preDir = currentDir;
     p->nextDir = currentDir->dirPtr;
     currentDir->dirPtr = p;
@@ -173,34 +187,35 @@ int FileSystem::deleteFile() {
     f = currentDir->filePtr;
 
     /*
-     * 判断该目录下有无需要删除的文件
+     * Check whether there exist the files that need to remove.
      * */
 
-    while (f != NULL) {
-        if (!strcmp(f->name, temp))
+    while( f != NULL )
+    {
+        if( !strcmp(f->name, temp) )
             break;
         above = f;
         f = f->nextFile;
     }
-    if (f == NULL) {
+    if( f == NULL )
+    {
         cout << "NO FILE              -FALSE" << endl;
         return 0;
     }
     disk_empty += f->size;
     MyDir *d = currentDir;
-    while (d != 0) //修改删除文件后各级目录的大小
+    while( d != 0 ) //The sizes of individual directory, after removing the file
     {
         d->size -= f->size;
         d = d->preDir;
     }
 
-    /*
-     * 删除时考虑
-     * 1. 需要删除的文件恰好是目录文件链表中的头节点
-     * 2. 需要删除的文件在链表中间
+    /* The consiferations while removing the file.
+     * 1. The file, which needs to be deleted, is the header point (node) of the linked list of directories
+     * 2. The file, which needs to be deleted, is the middle point (node) of the linked list of directories
      * */
 
-    if (f == currentDir->filePtr)//删除文件结点
+    if( f == currentDir->filePtr )//Remove the point (node) of the file
         currentDir->filePtr = currentDir->filePtr->nextFile;
     else
         above->nextFile = f->nextFile;
@@ -222,23 +237,25 @@ int FileSystem::deleteDir() {
     MyDir *p, *pre = NULL;
     p = root;
     p = currentDir->dirPtr;
-    cin >> n; //删除的文件名
+    cin >> n; //The filename that needs to be deleted
 
-    /*查找所需要删除的目录*/
-    while (p != NULL) {
-        if (strcmp(p->name, n)==0)
-            {pre = p;break;}
+    /*Search for the directory, that need to delete*/
+    while( p != NULL )
+    {
+        if( strcmp(p->name, n) == 0 )
+            { pre = p; break; }
         p = p->nextDir;
     }
 
-    if (p == NULL) {
+    if( p == NULL )
+    {
         cout << "DELETE            -FALSE" << endl;
         return 0;
     }
 
-    /*删除目录时需要考虑
-     * 1. 该目录处于父目录的目录链表的位置
-     * 2. 该目录下是否有子目录或者子文件
+    /* Consideraions while deleting the directory
+     * 1. The location of the deleted dir in the linked list of root dir
+     * 2. Other files/directories in the currrent directory
      * */
     disk_empty += p->size;
     if (p == currentDir->dirPtr)
@@ -247,7 +264,7 @@ int FileSystem::deleteDir() {
         p->preDir->nextDir = p->nextDir;
 
     pre = currentDir;
-    while (pre != NULL) //修改删除目录后各级目录大小
+    while (pre != NULL)//Resize the size of individual directory, after the deletion of dir
     {
         pre->size -= p->size;
         pre = pre->preDir;
@@ -255,27 +272,30 @@ int FileSystem::deleteDir() {
     size -= p->size;
     MyDir *d = p->dirPtr;
     MyFile *f = p->filePtr;
-    if (f != 0) {
-        while (p->filePtr->nextFile != NULL)//删除此目录下的文件
+    if( f != 0 )
+    {
+        while( p->filePtr->nextFile != NULL )//Delete the files under this dir
         {
             f = p->filePtr;
-            while (f->nextFile->nextFile != NULL)//寻找最后一个文件结点
+            while (f->nextFile->nextFile != NULL)//Search the last(end) file node
                 f = f->nextFile;
             this->dele_file(f->nextFile);
             f->nextFile = NULL;
         }
-        if (p->filePtr->nextFile == NULL) {
+        if( p->filePtr->nextFile == NULL )
+        {
             this->dele_file(p->filePtr);
             p->filePtr = NULL;
         }
     }
-    if (d != NULL) {
-        while (p->dirPtr->nextDir != NULL)//删除此目录下的目录
+    if( d != NULL )
+    {
+        while( p->dirPtr->nextDir != NULL )//Delete the dirs under this dir
         {
             d = p->dirPtr;
-            while (d->nextDir->nextDir != NULL)//寻找最后一个文件结点
+            while (d->nextDir->nextDir != NULL)//Search the last(end) dir node
                 d = d->nextDir;
-            this->dele_dir(d->nextDir);//递归调用此函数
+            this->dele_dir(d->nextDir);//Recursion
             d->nextDir = NULL;
         }
         if (p->dirPtr->nextDir == NULL) {
@@ -564,12 +584,12 @@ int FileSystem::edit() {
             f->size = s.length();
             disk_empty -= f->size;
             MyDir *d = currentDir;
-            while (d != 0)//修改编辑文件后各级目录的大小
+            while( d != 0 )//Resize the size of dirs of each layer
             {
                 d->size += f->size;
                 d = d->preDir;
             }
-             cout << "EDIT              -OK" << endl;
+            cout << "EDIT              -OK" << endl;
             size += f->size;
             return 1;
         }
@@ -580,12 +600,12 @@ int FileSystem::edit() {
     return 0;
 }
 
-int FileSystem::show_path(MyDir *d)//实现显示当前路径的函数
+int FileSystem::show_path(MyDir *d)//show the current path
 {
     if (d->preDir == NULL)
         cout << root->name;
     if (d->preDir != NULL) {
-        this->show_path(d->preDir);//递归调用此函数
+        this->show_path(d->preDir);//recursion
         cout << d->name;
     }
     cout << "/";
@@ -619,7 +639,7 @@ int FileSystem::showCurrentDir() {
     return 1;
 }
 
-int FileSystem::showPath()//显示当前路径
+int FileSystem::showPath()//Show the current path
 {
     show_path(currentDir);
     return 1;
