@@ -589,11 +589,13 @@ int FileSystem::edit() {
     string s;
     cin >> n;
     MyFile *f = currentDir->filePtr;
-    while (f != 0) {
-        if (!strcmp(f->name, n)) {
-            cin >> s;
+    while( f != 0 )
+    {
+        if( !strcmp(f->name, n) )
+        {
+            cin >> s ;//The content of the file.
             f->content = s;
-            f->size = s.length();
+            f->size = (int)(s.length());
             disk_empty -= f->size;
             MyDir *d = currentDir;
             while( d != 0 )//Resize the size of dirs of each layer

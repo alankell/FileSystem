@@ -53,12 +53,13 @@ int FileSystem::regist( string username, string password )
     }
     //No repetition
     FILE *adduser = fopen("./user.txt","a") ;
+    if( !adduser )
+    {
+        printf( RED"[Error] " RESET"Cannot open ./user.txt\n");
+    }
     fprintf( adduser,"%s\t%s\n", username.c_str(), password.c_str());
     
     this->getUserVector().push_back( UserInfo( username, password ) ) ;
-    
-    
-    
     
     return 1 ;
 }
@@ -163,7 +164,7 @@ int FileSystem::fsOperate( string user, string passwd )
             else if (choice == "exit?")
                 cout << "Exit" << endl;
             else
-                cout << "Invalid Command" << endl;
+                cout << RED"[Warning]" RESET"Invalid Command" << endl;
         }
     }
 
@@ -198,13 +199,13 @@ void FileSystem::run()
     while( true )
     {
         system("clear");
-        cout << "\t\t***********************************************************\t" << endl;
-        cout << "\t\t*               File System                                \t*" << endl;
-        cout << "\t\t*               1. Registration for New User               \t*" << endl;
-        cout << "\t\t*               2. Sign in                                 \t*" << endl;
-        cout << "\t\t*               3. Help                                    \t*" << endl;
-        cout << "\t\t*               4. Exit                                    \t*" << endl;
-        cout << "\t\t***********************************************************\t" << endl;
+        cout << "\t\t***********************************************************" << endl;
+        cout << "\t\t*               File System                               *" << endl;
+        cout << "\t\t*               1. Registration for New User              *" << endl;
+        cout << "\t\t*               2. Sign in                                *" << endl;
+        cout << "\t\t*               3. Help                                   *" << endl;
+        cout << "\t\t*               4. Exit                                   *" << endl;
+        cout << "\t\t**********************************************************t" << endl;
         cout << "\t\tPlease choice: " ;
         cin >> choice;
         switch ( choice )

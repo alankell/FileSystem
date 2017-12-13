@@ -8,7 +8,12 @@
 using namespace std;
 #define MAX_NAME  20
 
+#ifndef _FILESYSTEM_
+#define _FILESYSTEM_
+
+extern int disk_empty ;
 vector<string> stringSplit(string input, char *delimiters) ;
+
 typedef struct UserInfo
 {
     string name   ;//User name
@@ -102,3 +107,4 @@ class FileSystem
     int getSize();//get the size of currrent directory, where the user is
     MyDir *getCurrentdir(); //Obtain the current directory
 };
+#endif
