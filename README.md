@@ -1,4 +1,4 @@
-#File System Simulator
+# File System Simulator
 ## Inroduction
   This is a file system simulator running on **Linux Ubuntu**
 The program is written using **C/C++**. Note that, the standard of C++ 
