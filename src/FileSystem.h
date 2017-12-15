@@ -1,3 +1,7 @@
+#ifndef _FILESYSTEM_
+#define _FILESYSTEM_
+
+//------- Inclusion ----------------------------------
 #include<iostream>
 #include<string.h>
 #include<string>
@@ -6,63 +10,76 @@
 #include<stdlib.h>
 #include<stdio.h>
 using namespace std;
+
+//--------- Macro --------------------------------------
 #define MAX_NAME  20
 
-#ifndef _FILESYSTEM_
-#define _FILESYSTEM_
-
+//-------- Global Var ----------------------------------
 extern int disk_empty ;
-vector<string> stringSplit(string input, char *delimiters) ;
+//-------- Function ------------------------------------
+vector<string> stringsplie( string line ) ;
 
+
+//-------- Structure Definition ------------------------
 typedef struct UserInfo
 {
     string name   ;//User name
     string passwd ;//User password
     UserInfo( string u, string p):name(u), passwd(p){}
 }UserInfo;
-
+//-------- Structure Definition ------------------------
 typedef struct MyFile
 {
-    char name[MAX_NAME];
-    int size;
+    string name    ;
+    int    size    ;
+    int    fid     ;
     struct MyFile *nextFile;
-    string content;
+    string content ;
+    MyFile( int fid ):fid(fid)
+    { size = 0 ; content = "" ; nextFile = NULL; };
 } MyFile;
-
+//-------- Structure Definition ------------------------
 typedef struct MyDir
 {
-    char name[MAX_NAME];
+    string  name        ;
     int size;
-    MyDir *nextDir;
-    MyDir *preDir;
-    MyFile *filePtr;
-    MyDir *dirPtr;
-} MyDir;
-
-
+    MyDir   *nextDir    ;//The next dir, which is on the same layer
+    MyDir   *preDir     ;
+    MyFile  *filePtr    ;
+    MyDir   *dirPtr     ;//The first dir on next layer
+    MyDir( MyDir* nD, MyDir* pD, MyFile* fptr, MyDir* sD, int s ):nextDir(nD),preDir(pD),filePtr(fptr),dirPtr(sD), size(s)
+    { name = "" ; }
+}MyDir;
+//-------- Structure Definition ------------------------
 class FileSystem
 {
-	private:
-    vector<UserInfo> vUser ;
-    MyDir *currentDir;
-    MyFile *copytempfile;
-    MyDir *copytempdir;
-    MyDir *root; //root directory
-    char password[MAX_NAME];
-    char name[MAX_NAME];
-    int size;
+private:
+    vector<UserInfo> vUser  ;
+    MyDir   *currentDir     ;
+    MyFile  *copytempfile   ;
+    MyDir   *copytempdir    ;
+    MyDir   *root           ; //root directory
+    char    password[MAX_NAME];
+    char    name[MAX_NAME]  ;
+    int     size            ;
+    int     filenumber      ;
 
- public:
+public:
     //----- Memeber Access ---------------------------------
     vector< UserInfo > &getUserVector( void ){ return vUser ; }
-    
+    void setFileNumber( int n ){ filenumber = n    ; }
+    int  getFileNumber( )      { return filenumber ; }
     //----- Function ---------------------------------------
     void run() ;
     void readUserInfo();
+    void readDirTree() ;
     int login( string, string ) ;
     int fsOperate( string, string );
     int regist( string, string );
     int setUser( string, string);
+    MyDir* BuildDir( string DirName, MyDir *currentDir ) ;
+    void BuildFile( string FileName, MyDir *currentDir, int fid );
+    void BuildDirFile( ifstream & token, vector<string> strspl, MyDir *currentDir );
     //----- Destructor --------------------------------------
     FileSystem();
     ~FileSystem();

@@ -67,8 +67,8 @@ FileSystem::~FileSystem() {
 int FileSystem::newFile() {
 
     MyFile *p = NULL;
-    p = new MyFile;
-
+    p = new MyFile( this->getFileNumber() + 1 ) ;
+    this->setFileNumber( this->getFileNumber() + 1 ) ;
     if( p == 0 )
     {
         cout << "CREATE           -FALSE";
@@ -100,11 +100,10 @@ int FileSystem::newFile() {
     }
     else
     {
-        MyFile *q = new MyFile;
-        q = currentDir->filePtr;
+        MyFile *q = currentDir->filePtr;
         while( q != NULL )
         {
-            if( strcmp(p->name, q->name)==0 )
+            if( strcmp(p->name.c_str(), q->name.c_str())==0 )
             {
                 cout << "FILE EXISTS             -FALSE" << endl;
                 return 0;
@@ -125,16 +124,16 @@ int FileSystem::newFile() {
         }
        
     }
-    currentDir->filePtr->size = 0;
+    this->currentDir->filePtr->size = 0;
     cout <<"CREATE             -OK" << endl;
     disk_empty = disk_empty - p->size;
-    size += p->size;
+    this->size += p->size;
     return 1;
 }
 
 int FileSystem::newDir() {
     MyDir *p, *h;
-    p = new MyDir;
+    p = new MyDir( NULL, NULL, NULL, NULL,0 );
     cin >> p->name;
 
     /*Check naming rule*/
@@ -147,16 +146,10 @@ int FileSystem::newDir() {
             return 0 ;
         }
     }
-
-
-    p->dirPtr = NULL;
-    p->size = 0;
-    p->filePtr = NULL;
-    p->nextDir = NULL;
-    if (currentDir->dirPtr == NULL)
+    if ( this->currentDir->dirPtr == NULL)
         h = NULL;
     else
-        h = currentDir->dirPtr;
+        h = this->currentDir->dirPtr;//First dir on next layer
 
     /* Following situation may apper, right after the registration:
      * 1. There exists NO file in the directory.
@@ -165,10 +158,11 @@ int FileSystem::newDir() {
      * */
     
     /*Check naming rule*/
-
+    //Iterate dirs on next years
+    //Check whether the dir has been existing
     while( h != NULL )
     {
-        if( strcmp(h->name, p->name) == 0 )
+        if( strcmp(h->name.c_str(), p->name.c_str()) == 0 )
         {
             cout << "DIR EXISTS           -FALSE" << endl;
             return 0;
@@ -177,9 +171,9 @@ int FileSystem::newDir() {
     }
 
     /*Rebuild the Linked List*/
-    p->preDir = currentDir;
-    p->nextDir = currentDir->dirPtr;
-    currentDir->dirPtr = p;
+    p->preDir = this->currentDir;
+    p->nextDir = this->currentDir->dirPtr;
+    this->currentDir->dirPtr = p;
 
     cout << "CREATE                -OK" << endl;
     return 1;
@@ -204,7 +198,7 @@ int FileSystem::deleteFile() {
 
     while( f != NULL )
     {
-        if( !strcmp(f->name, temp) )
+        if( !strcmp(f->name.c_str(), temp) )
             break;
         above = f;
         f = f->nextFile;
@@ -254,7 +248,7 @@ int FileSystem::deleteDir() {
     /*Search for the directory, that need to delete*/
     while( p != NULL )
     {
-        if( strcmp(p->name, n) == 0 )
+        if( strcmp(p->name.c_str(), n) == 0 )
             { pre = p; break; }
         p = p->nextDir;
     }
@@ -329,7 +323,7 @@ int FileSystem::readDir() {
 
     cin >> name;
     while (p != NULL) {
-        if (strcmp(p->name, name) == 0) {
+        if (strcmp(p->name.c_str(), name) == 0) {
             currentDir = p;
             return 1;
         }
@@ -344,7 +338,7 @@ int FileSystem::readFile() {
     cin >> n;
     MyFile *f = currentDir->filePtr;
     while (f != 0) {
-        if (strcmp(f->name, n)==0) {
+        if (strcmp(f->name.c_str(), n)==0) {
             cout << f->content << endl;
             return 1;
         }
@@ -361,7 +355,7 @@ int FileSystem::renameDir() {
     cin >> n2;
     h = currentDir->dirPtr;
     while (h != NULL) {
-        if (strcmp(h->name, n2)==0) {
+        if (strcmp(h->name.c_str(), n2)==0) {
             cout << "DIR EXIST        -FALSE" << endl;
             return 0;
         }
@@ -369,7 +363,7 @@ int FileSystem::renameDir() {
     }
     h = currentDir->dirPtr;
     while (h != NULL) {
-        if (strcmp(h->name, n1)==0)
+        if (strcmp(h->name.c_str(), n1)==0)
             break;
         h = h->nextDir;
     }
@@ -377,7 +371,8 @@ int FileSystem::renameDir() {
         cout << "NO DIR         -FALSE" << endl;
         return 0;
     }
-    strcpy(h->name, n2);
+    //strcpy(h->name, n2);
+    h->name = n2 ;
     cout << "RENAME            -OK" << endl;
     return 1;
 }
@@ -389,7 +384,7 @@ int FileSystem::renameFile() {
     cin >> n2;
     h = currentDir->filePtr;
     while (h != NULL) {
-        if (!strcmp(h->name, n2)) {
+        if (!strcmp(h->name.c_str(), n2)) {
             cout << "FILE EXISTS           -FALSE" << endl;
             return 0;
         }
@@ -397,7 +392,7 @@ int FileSystem::renameFile() {
     }
     h = currentDir->filePtr;
     while (h != NULL) {
-        if (!strcmp(h->name, n1))
+        if (!strcmp(h->name.c_str(), n1))
             break;
         h = h->nextFile;
     }
@@ -405,7 +400,7 @@ int FileSystem::renameFile() {
         cout << "NO FILE            -FALSE" << endl;
         return 0;
     }
-    strcpy(h->name, n2);
+    h->name = n2 ;
     cout << "RENAME             -OK" << endl;
     return 1;
 }
@@ -413,11 +408,7 @@ int FileSystem::renameFile() {
 MyDir *FileSystem::copy_dir(MyDir *d) {
     MyFile *fh;
     MyDir *dh, *dir;
-    dir = new MyDir;
-    dir->dirPtr = NULL;
-    dir->filePtr = NULL;
-    dir->nextDir = NULL;
-    dir->preDir = NULL;
+    dir = new MyDir( NULL, NULL, NULL, NULL, 0 );
     fh = d->filePtr;
     dh = d->dirPtr;
 
@@ -446,7 +437,8 @@ MyDir *FileSystem::copy_dir(MyDir *d) {
         dh = dh->dirPtr;
     }
 
-    strcpy(dir->name, d->name);
+    //strcpy(dir->name, d->name);
+    dir->name = d->name ;
     dir->size = d->size;
     return dir;
 }
@@ -457,7 +449,7 @@ MyDir *FileSystem::copyDir() {
     cin >> n;
     h = currentDir->dirPtr;
     while (h != NULL) {
-        if (!strcmp(h->name, n))
+        if (!strcmp(h->name.c_str(), n))
             break;
         h = h->nextDir;
     }
@@ -470,11 +462,14 @@ MyDir *FileSystem::copyDir() {
     return copytempdir;
 }
 
-MyFile *FileSystem::copy_file(MyFile *h) {
+MyFile *FileSystem::copy_file( MyFile *h )
+{
     MyFile *f;
-    f = new MyFile;
+    f = new MyFile( this->getFileNumber() + 1  );
+    this->setFileNumber( this->getFileNumber() + 1 ) ;
+    
     f->size = h->size;
-    strcpy(f->name, h->name);
+    f->name = h->name ;
     f->content = h->content;
     return f;
 }
@@ -486,7 +481,7 @@ MyFile *FileSystem::copyFile() {
     h = currentDir->filePtr;
 
     while (h != NULL) {
-        if (!strcmp(h->name, n))
+        if (!strcmp(h->name.c_str(), n))
             break;
         h = h->nextFile;
     }
@@ -520,7 +515,7 @@ int FileSystem::pasteDir() {
 
     } else {
         while (h != NULL) {
-            if (!strcmp(h->name, copytempdir->name))
+            if (!strcmp(h->name.c_str(), copytempdir->name.c_str()))
                 break;
             h = h->nextDir;
         }
@@ -561,7 +556,7 @@ int FileSystem::pasteFile() {
     }
 	else {
         while (h != NULL) {
-            if (!strcmp(h->name, copytempfile->name)) {
+            if (!strcmp(h->name.c_str(), copytempfile->name.c_str())) {
                 cout << "FILE EXISTS                -FALSE" << endl;
                 return 0;
             }
@@ -591,7 +586,7 @@ int FileSystem::edit() {
     MyFile *f = currentDir->filePtr;
     while( f != 0 )
     {
-        if( !strcmp(f->name, n) )
+        if( !strcmp(f->name.c_str(), n) )
         {
             cin >> s ;//The content of the file.
             f->content = s;
@@ -670,17 +665,19 @@ int FileSystem::goback() {
 
 int FileSystem::setUser( string user, string passwd )
 {
-    MyDir *root = new MyDir;
-    strcpy( root->name, user.c_str() );
     strcpy( this->name, user.c_str() );
     strcpy( this->password, passwd.c_str());
 
-    this->root = root;
-    currentDir = root;
-    currentDir->preDir = NULL;
-    currentDir->dirPtr = NULL;
-    currentDir->filePtr = NULL;
-    currentDir->nextDir = NULL;
+    MyDir *itr = this->root->dirPtr ;
+    
+    while( itr != NULL )
+    {
+        if( itr->name == user )
+        {
+            this->currentDir = itr ;
+        }
+        itr = itr->nextDir ;
+    }
     return 1;
 }
 

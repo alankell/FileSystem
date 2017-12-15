@@ -1,10 +1,11 @@
 #include"Interface.h"
 #include<iostream>
 #include<string>
+#include<string.h>
 #include<fstream>
 #include"FileSystem.h"
 #include<unistd.h>
-
+#include<assert.h>
 #define RED     "\x1b[31m"
 #define GREEN   "\x1b[32m"
 #define YELLOW  "\x1b[33m"
@@ -170,6 +171,11 @@ int FileSystem::fsOperate( string user, string passwd )
 
 }
 
+//****************************************************************************************
+//* Fun Name: readUserInfo                                                               *
+//* Work: Read users' information before begining the program                            *
+//* Where to be called: run()                                                            *
+//* **************************************************************************************
 void FileSystem::readUserInfo()
 {
     ifstream token ;
@@ -185,17 +191,165 @@ void FileSystem::readUserInfo()
         this->getUserVector().push_back( UserInfo( user, password ) ) ;
     }
 }
+//****************************************************************************************
+//* Fun Name: stringsplie()                                                              *
+//* Work: Splie the string with some characters                                          *
+//* Where to be called: readDirTree()                                                    *
+//* Editor: Tien-Hung Tseng                                                              *
+//****************************************************************************************
+vector<string> stringsplit( string line )
+{
+    vector<string> result         ;
+    char           str[1024] = "" ;
+    strcpy( str, line.c_str() ) ;
+    char *pch = strtok( str, " /");
+    while( pch != NULL )
+    {
+        result.push_back( pch ) ;
+        pch = strtok( NULL, "/" );
+    }
+    return result ;
+}
+//****************************************************************************************
+//* Fun Name: BuildDir()                                                                 *
+//* Work: Using Recursive Way to Build directories or files                              *
+//* Where to be called: BuildDirFile()                                                   *
+//* Editor: Tien-Hung Tseng                                                              *
+//****************************************************************************************
+MyDir*  FileSystem::BuildDir( string DirName, MyDir *currentDir )
+{
+    MyDir *newDirptr   = NULL  ;
+    MyDir *hdNextLayer = NULL  ;//header of next layer
+    newDirptr = new MyDir( NULL, NULL, NULL, NULL, 0 ) ;
+    newDirptr->name = DirName ;
+    
+    if( currentDir->dirPtr == NULL)
+        hdNextLayer = NULL;
+    else
+        hdNextLayer = currentDir->dirPtr;//First dir on next layer
+    
+    /*Rebuild the Linked List*/
+    newDirptr->preDir  = currentDir;
+    newDirptr->nextDir = currentDir->dirPtr;
+    currentDir->dirPtr = newDirptr ;
+    return newDirptr ;
+}
+//****************************************************************************************
+//* Fun Name: BuildFile()                                                                *
+//* Work: Using Recursive Way to Build directories or files                              *
+//* Where to be called: BuildDirFile()                                                   *
+//* Editor: Tien-Hung Tseng                                                              *
+//****************************************************************************************
+void  FileSystem::BuildFile( string FileName, MyDir *currentDir, int id )
+{
+    MyFile *newFile = new MyFile( id ) ;
+    newFile->name = FileName ;
+
+    if( currentDir->filePtr == NULL )
+    {
+        newFile->nextFile = currentDir->filePtr;
+        currentDir->filePtr = newFile ;
+    }
+    else
+    {
+        MyFile *q = currentDir->filePtr;
+        while( q != NULL )
+        {
+            assert( strcmp( newFile->name.c_str(), q->name.c_str() ) != 0 );
+            q = q->nextFile ;
+        }
+        /*Rebuild the Linked List*/
+        newFile->nextFile = currentDir->filePtr;
+        newFile->size = 0 ;
+        currentDir->filePtr = newFile ;
+        MyDir *h = currentDir;
+        
+        /*Resize the size of upper layer direcotory*/
+        while( h != NULL )
+        {
+            h->size += newFile->size;
+            h = h->preDir;
+        }
+        
+    }
+    currentDir->filePtr->size = 0;
+    this->setFileNumber( this->getFileNumber()+1 );
+    disk_empty = disk_empty - newFile->size;
+    //this->size += newFile->size;
+}
+//****************************************************************************************
+//* Fun Name: BuildDirFile()                                                             *
+//* Work: Using Recursive Way to Build directories or files                              *
+//* Where to be called: readDirTree()                                                    *
+//* Editor: Tien-Hung Tseng                                                              *
+//****************************************************************************************
+void  FileSystem::BuildDirFile( ifstream & token, vector<string> strspl, MyDir *currentDir )
+{
+    assert( strspl[1] == "f" || strspl[1] == "d" );
+    int size = stoi( strspl[2] );
+    //--- File --------------------------------
+    if( strspl[1] == "f" )
+    {
+        BuildFile( strspl[0], currentDir, size );
+        return ;
+    }
+    //--- Directoy ----------------------------
+    else if( strspl[1] == "d" )
+    {
+        MyDir *newDir = NULL ;
+        newDir = BuildDir( strspl[0], currentDir );
+        for( int i = 0 ; i < size ; i++ )
+        {
+            string nextline = ""   ;
+            token >> nextline      ;
+            vector<string> nstrspl = stringsplit( nextline ) ;
+            BuildDirFile( token, nstrspl, newDir ) ;
+        }
+    }
+}
+//****************************************************************************************
+//* Fun Name: readDirTree                                                                *
+//* Work: Read preexisting tree strucutre of directories and files                       *
+//* Where to be called: run()                                                            *
+//* Editor: Tien-Hung Tseng                                                              *
+//****************************************************************************************
+void FileSystem::readDirTree()
+{
+    ifstream token ;
+    token.open( "tree.txt", ifstream::in ) ;
+    assert( token ) ;
+    
+    string line = " " ;
+    //---- For Root ---------------------------------------
+    token >> line ;
+    vector<string> rootinfo = stringsplit( line ) ;
+    assert( rootinfo[0] == "root") ;
+    this->root = new MyDir( NULL, NULL, NULL, NULL, 0 ) ;
+    this->root->name = rootinfo[0] ;
+    while( token >> line )
+    {
+        vector<string> strsplit = stringsplit(line);
+        assert( strsplit.size() == 3 );
+        BuildDirFile( token, strsplit, this->root ) ;
+    }
+}
+//****************************************************************************************
+//* Fun Name: run                                                                        *
+//* Work: Read preexisting tree strucutre of directories and files                       *
+//* Where to be called: main()                                                           *
+//* Editor: Original Author & Tien-Hung Tseng                                            *
+//****************************************************************************************
 void FileSystem::run()
 {
+    //------- Var Delcare --------------------------------------------------------------
     int  choice = 0 ;
-    string name, pass, pass1 ;
-    system("clear");//clean the screen
-    sleep( 1 );
-    
+    string name = "", pass = "", pass1 = "" ;
+    system("clear") ;
+    //------- Read Setting File --------------------------------------------------------
     this->readUserInfo() ;
+    this->readDirTree()  ;
     
-    
-    
+    //------- Begin Execution -----------------------------------------------------------
     while( true )
     {
         system("clear");
