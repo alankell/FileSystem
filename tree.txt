@@ -1,0 +1,16 @@
+root/d/4
+	Tim/d/1
+		video/d/3
+			tutorial/d/2
+				Chinese/f/6
+				English/f/5
+			cost/f/4
+			funny/f/3
+	Eric/d/2
+		dir2/d/1
+			file3/f/2
+		dir1/d/2
+			file2/f/1
+			file1/f/0
+	Tony/d/0
+	Amy/d/0
