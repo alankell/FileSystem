@@ -67,7 +67,7 @@ FileSystem::~FileSystem() {
 int FileSystem::newFile() {
 
     MyFile *p = NULL;
-    p = new MyFile( this->getFileNumber() + 1 ) ;
+    p = new MyFile( this->getFileNumber() ) ;
     this->setFileNumber( this->getFileNumber() + 1 ) ;
     if( p == 0 )
     {
@@ -131,7 +131,8 @@ int FileSystem::newFile() {
     return 1;
 }
 
-int FileSystem::newDir() {
+int FileSystem::newDir( )
+{
     MyDir *p, *h;
     p = new MyDir( NULL, NULL, NULL, NULL,0 );
     cin >> p->name;
@@ -146,7 +147,7 @@ int FileSystem::newDir() {
             return 0 ;
         }
     }
-    if ( this->currentDir->dirPtr == NULL)
+    if( this->currentDir->dirPtr == NULL)
         h = NULL;
     else
         h = this->currentDir->dirPtr;//First dir on next layer
@@ -216,7 +217,7 @@ int FileSystem::deleteFile() {
         d = d->preDir;
     }
 
-    /* The consiferations while removing the file.
+    /* The considerations while removing the file.
      * 1. The file, which needs to be deleted, is the header point (node) of the linked list of directories
      * 2. The file, which needs to be deleted, is the middle point (node) of the linked list of directories
      * */

@@ -365,6 +365,12 @@ int DirCount( MyDir *currentDir )
         c++ ;
         itrDir = itrDir->nextDir ;
     }
+    MyFile *itrFile = currentDir->filePtr ;//Iterator
+    while( itrFile )
+    {
+        c++ ;
+        itrFile = itrFile->nextFile ;
+    }
     return c ;
 }
 //****************************************************************************************
@@ -384,21 +390,19 @@ void FileSystem::dumpDirContent( FILE* f, MyDir* currentDir, int layer )
     fprintf( f, "%s%s/d/%d\n", tabcount.c_str(), currentDir->name.c_str(), dircount );
     
     MyDir *itrDir = currentDir->dirPtr ;//Iterator
+    //---- Dump Inner Dirs (in Current Dir)  ----------------------
     while( itrDir )
     {
-        //---- Dump Inner Files (in Current Dir) ---------------------
-        MyFile *itrFile = itrDir->filePtr ;
-        while( itrFile )
-        {
-            string tabcount2 = tab_level( layer + 1 ) ;
-            fprintf( f, "%s%s/f/%d\n", tabcount2.c_str(), itrFile->name.c_str(), itrFile->fid );
-            itrFile = itrFile->nextFile ;
-        }
-        
-        //---- Dump Inner Dirs (in Current Dir)  ----------------------
         this->dumpDirContent( f, itrDir, layer+1 ) ;
-        
         itrDir = itrDir->nextDir ;
+    }
+    //---- Dump Inner Files (in Current Dir) ---------------------
+    MyFile *itrFile = currentDir->filePtr ;
+    while( itrFile )
+    {
+        string tabcount2 = tab_level( layer + 1 ) ;
+        fprintf( f, "%s%s/f/%d\n", tabcount2.c_str(), itrFile->name.c_str(), itrFile->fid );
+        itrFile = itrFile->nextFile ;
     }
 }
 //****************************************************************************************
