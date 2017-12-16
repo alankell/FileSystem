@@ -14,12 +14,14 @@ using namespace std;
 //--------- Macro --------------------------------------
 #define MAX_NAME  20
 
+//--------- Prototype ----------------------------------
+struct MyDir ;
 //-------- Global Var ----------------------------------
 extern int disk_empty ;
 //-------- Function ------------------------------------
 vector<string> stringsplie( string line ) ;
-
-
+string         tab_level( int layer ) ;
+int            DirCount( MyDir *currentDir );
 //-------- Structure Definition ------------------------
 typedef struct UserInfo
 {
@@ -70,16 +72,19 @@ public:
     void setFileNumber( int n ){ filenumber = n    ; }
     int  getFileNumber( )      { return filenumber ; }
     //----- Function ---------------------------------------
-    void run() ;
-    void readUserInfo();
-    void readDirTree() ;
-    int login( string, string ) ;
-    int fsOperate( string, string );
-    int regist( string, string );
-    int setUser( string, string);
+    void   run() ;
+    void   readUserInfo();
+    void   readDirTree() ;
+    void   BuildFile( string FileName, MyDir *currentDir, int fid );
+    void   BuildDirFile( ifstream & token, vector<string> strspl, MyDir *currentDir );
+    void   dumpDirContent( FILE* f, MyDir* currentDir, int layer );
+    void   dumpDirTree() ;
+    int    login( string, string ) ;
+    int    fsOperate( string, string );
+    int    regist( string, string );
+    int    setUser( string, string);
     MyDir* BuildDir( string DirName, MyDir *currentDir ) ;
-    void BuildFile( string FileName, MyDir *currentDir, int fid );
-    void BuildDirFile( ifstream & token, vector<string> strspl, MyDir *currentDir );
+    
     //----- Destructor --------------------------------------
     FileSystem();
     ~FileSystem();

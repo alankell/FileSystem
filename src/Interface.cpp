@@ -175,6 +175,7 @@ int FileSystem::fsOperate( string user, string passwd )
 //* Fun Name: readUserInfo                                                               *
 //* Work: Read users' information before begining the program                            *
 //* Where to be called: run()                                                            *
+//* Editor: Tien-Hung Tseng                                                              *
 //* **************************************************************************************
 void FileSystem::readUserInfo()
 {
@@ -334,6 +335,91 @@ void FileSystem::readDirTree()
     }
 }
 //****************************************************************************************
+//* Fun Name: tab_level()                                                                *
+//* Work: calculate the count of the level                                                   *
+//* Where to be called: dumpDirContent()                                                 *
+//* Editor: Tien-Hung Tseng                                                              *
+//****************************************************************************************
+string tab_level( int layer )
+{
+    string tab = "" ;
+    for( int i = 0 ; i < layer ; i++ )
+    {
+        tab += "\t" ;
+    }
+    return tab ;
+}
+//****************************************************************************************
+//* Fun Name: DirCount()                                                                 *
+//* Work: calculate the count of inner dirs in the current dir                           *
+//* Where to be called: dumpDirContent()                                                 *
+//* Editor: Tien-Hung Tseng                                                              *
+//****************************************************************************************
+int DirCount( MyDir *currentDir )
+{
+    assert( currentDir ) ;
+    int c = 0 ;
+    MyDir *itrDir = currentDir->dirPtr ;//Iterator
+    while( itrDir )
+    {
+        c++ ;
+        itrDir = itrDir->nextDir ;
+    }
+    return c ;
+}
+//****************************************************************************************
+//* Fun Name: dumpDirContent()                                                           *
+//* Work: dump the content (inner files and dirs) in the current dir                     *
+//* Where to be called: dumpDirTree()                                                    *
+//* Editor: Tien-Hung Tseng                                                              *
+//****************************************************************************************
+void FileSystem::dumpDirContent( FILE* f, MyDir* currentDir, int layer )
+{
+    //---- Check ----------------------------------------------------
+    if( !currentDir ) return ;
+    assert( f ) ;
+    //---- Dump Current Dir Info ---------------------------------./fs
+    string tabcount = tab_level( layer ) ;
+    int dircount = DirCount( currentDir ) ;
+    fprintf( f, "%s%s/d/%d\n", tabcount.c_str(), currentDir->name.c_str(), dircount );
+    
+    MyDir *itrDir = currentDir->dirPtr ;//Iterator
+    while( itrDir )
+    {
+        //---- Dump Inner Files (in Current Dir) ---------------------
+        MyFile *itrFile = itrDir->filePtr ;
+        while( itrFile )
+        {
+            string tabcount2 = tab_level( layer + 1 ) ;
+            fprintf( f, "%s%s/f/%d\n", tabcount2.c_str(), itrFile->name.c_str(), itrFile->fid );
+            itrFile = itrFile->nextFile ;
+        }
+        
+        //---- Dump Inner Dirs (in Current Dir)  ----------------------
+        this->dumpDirContent( f, itrDir, layer+1 ) ;
+        
+        itrDir = itrDir->nextDir ;
+    }
+}
+//****************************************************************************************
+//* Fun Name: dumpDirTree()                                                              *
+//* Work: dump the tree structure of the file system                                     *
+//* Where to be called: run()-choice 4                                                   *
+//* Editor: Tien-Hung Tseng                                                              *
+//****************************************************************************************
+void FileSystem::dumpDirTree()
+{
+    printf( GREEN"[Info]" RESET "Dump the new tree structure of the filesystem\n" );
+    
+    FILE *dirtree = fopen("./tree.txt","w") ;
+    if( !dirtree )
+    {
+        assert( dirtree );
+        printf( RED"[ERROR]" RESET"Cannot open tree.txt\n" );
+    }
+    dumpDirContent( dirtree, this->root, 0 ) ;
+}
+//****************************************************************************************
 //* Fun Name: run                                                                        *
 //* Work: Read preexisting tree strucutre of directories and files                       *
 //* Where to be called: main()                                                           *
@@ -425,6 +511,7 @@ void FileSystem::run()
            
             case 4: {
                         system("clear");
+                        this->dumpDirTree() ;
                         cout << "        --Leave the file system.." << endl;
                         sleep(1);
                         exit(0);
